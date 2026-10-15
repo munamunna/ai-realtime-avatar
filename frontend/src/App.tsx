@@ -1,11 +1,20 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type Message = {
   role: 'user' | 'assistant'
   text: string
 }
+
+type HealthResponse = {
+  status: string
+  service: string
+  timestamp: string
+}
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
 function App() {
   const [input, setInput] = useState('')
@@ -17,6 +26,53 @@ function App() {
   ])
 
   const [isListening, setIsListening] = useState(false)
+
+  const [backendStatus, setBackendStatus] = useState<
+  'checking' | 'connected' | 'error'
+>('checking')
+
+const [backendMessage, setBackendMessage] = useState(
+  'Checking backend connection...',
+)
+
+useEffect(() => {
+  const controller = new AbortController()
+
+  async function checkBackend() {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/health/`,
+        { signal: controller.signal },
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data: HealthResponse = await response.json()
+
+      if (data.status !== 'ok') {
+        throw new Error('Backend health check failed')
+      }
+
+      setBackendStatus('connected')
+      setBackendMessage('Backend connected')
+    } catch (error) {
+      if (controller.signal.aborted) return
+
+      setBackendStatus('error')
+      setBackendMessage(
+        error instanceof Error
+          ? `Backend unavailable: ${error.message}`
+          : 'Backend unavailable',
+      )
+    }
+  }
+
+  checkBackend()
+
+  return () => controller.abort()
+}, [])
 
   function sendMessage() {
     const text = input.trim()
@@ -68,9 +124,9 @@ function App() {
             Your conversational AI starts here.
           </p>
 
-          <div className="connection">
+          <div className={`connection ${backendStatus}`}>
             <span className="status-dot" />
-            Frontend running locally
+              {backendMessage}
           </div>
 
           <div className="feature-row">
@@ -129,7 +185,7 @@ function App() {
           </div>
 
           <p className="prototype-note">
-            UI prototype · AI backend not connected yet
+           React frontend · Django REST API
           </p>
         </section>
       </section>

@@ -36,3 +36,6 @@ tmp/
 
 # Docker/local overrides
 docker-compose.override.yml
+
+# Local development database
+backend/db.sqlite3

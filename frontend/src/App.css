@@ -399,3 +399,15 @@ footer {
 .message p {
   color: #f4f3ff;
 }
+
+.connection.connected .status-dot {
+  background: #4ade80;
+}
+
+.connection.checking .status-dot {
+  background: #fbbf24;
+}
+
+.connection.error .status-dot {
+  background: #f87171;
+}
